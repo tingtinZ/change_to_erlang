@@ -7,7 +7,7 @@
     stdlib
    ]},
   {env,[]},
-  {modules, []},
+  {modules, [change_to_erlang,change_to_erlang_prv]},
 
   {maintainers, []},
   {licenses, ["Apache 2.0"]},
