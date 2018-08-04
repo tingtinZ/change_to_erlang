@@ -1,0 +1,4 @@
+[{<<"sync">>,
+  {git,"https://github.com/ErlyShare/sync.git",
+       {ref,"376355e334ead87f62e7ec7754db8c0a7f2e5dd4"}},
+  0}].

@@ -1,6 +1,6 @@
 -module(change_to_erlang_prv).
 
--export([init/1, do/1, format_error/1]).
+-export([init/1, do/1, format_error/1, generate/2, analyse_param1/1, analyse_param2/1, analyse_param3/1,take_loop/1,load_txt/1]).
 
 -define(PROVIDER, change_to_erlang).
 -define(DEPS, [app_discovery]).
@@ -23,7 +23,6 @@ init(State) ->
     {ok, rebar_state:add_provider(State, Provider)}.
 
 
--spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
     Apps = case rebar_state:current_app(State) of
@@ -81,7 +80,6 @@ format_error(Reason) ->
 
 generate(Txt, Erl) ->
     Lines = load_txt(Txt),
-    rebar_api:info("Lines ~p~n", [Lines]),
     [LoopStart, LoopEnd, Direction] = take_loop(Lines),
     Str1 = "-module(hello).\n-export([start/0]).\n",
     Str2 = "start() ->\n",
@@ -89,12 +87,12 @@ generate(Txt, Erl) ->
         forward ->
             Str3 =  "    lists:foreach(fun(I) -> io:format(\"~p~n\",[I]) end, lists:seq("++LoopStart++","++LoopEnd++")),\n";
         reverse ->
-            Str3 =  "    lists:foreach(fun(I) -> io:format(\"~p~n\",[I]) end, lists:reverse:(lists:seq("++LoopEnd++","++LoopStart++"))),\n";
+            Str3 =  "    lists:foreach(fun(I) -> io:format(\"~p~n\",[I]) end, lists:reverse:(lists:seq("++LoopEnd++","++LoopStart++"))),\n"
     end,
 
     Str4 = "ok.",
     Strs = lists:concat([Str1, Str2, Str3, Str4]),
-    ok =  ok = file:write_file(Erl, Strs),
+    ok =  file:write_file(Erl, Strs),
     rebar_api:info("Generated ~s~n", [Erl]).
 
 load_txt(Txt) ->
@@ -115,15 +113,17 @@ take_loop(Lines) ->
                     Format = Line -- Param,
                     case delete_blank(Format) of
                         "for()" ->
-                            [Param1, Param2, Param3] = string:tokens(Format, ";"),
+                            [Param1, Param2, Param3] = string:tokens(Param, ";"),
                             StartNum = analyse_param1(Param1),
                             [Operator, EndNum] = analyse_param2(Param2),
                             NewDirection = analyse_param3(Param3),
                             case Operator of
                                 "<" ->
-                                    NewEndNum = erlang:integer_to_list(string:to_integer(EndNum) - 1);
+                                    {OldEndNum,_} = string:to_integer(EndNum),
+                                    NewEndNum = erlang:integer_to_list(OldEndNum-1);
                                 ">" ->
-                                    NewEndNum = erlang:integer_to_list(string:to_integer(EndNum) + 1);
+                                    {OldEndNum,_} = string:to_integer(EndNum),
+                                    NewEndNum = erlang:integer_to_list(OldEndNum+1);
                                 _ ->
                                     NewEndNum = EndNum
                             end,
