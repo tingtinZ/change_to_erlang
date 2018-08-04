@@ -1,6 +1,6 @@
 -module(change_to_erlang_prv).
 
--export([init/1, do/1, format_error/1, generate/2, analyse_param1/1, analyse_param2/1, analyse_param3/1,take_loop/1,load_txt/1]).
+-export([init/1, do/1, format_error/1]).
 
 -define(PROVIDER, change_to_erlang).
 -define(DEPS, [app_discovery]).
@@ -80,8 +80,9 @@ format_error(Reason) ->
 
 generate(Txt, Erl) ->
     Lines = load_txt(Txt),
+    ModName = filename:basename(Txt, ".txt"),
     [LoopStart, LoopEnd, Direction] = take_loop(Lines),
-    Str1 = "-module(hello).\n-export([start/0]).\n",
+    Str1 = "-module("++ModName++").\n-export([start/0]).\n",
     Str2 = "start() ->\n",
     case Direction of
         forward ->
@@ -112,7 +113,7 @@ take_loop(Lines) ->
                     Param = string:sub_string(Line, LeftBracket+1, RightBracket-1),
                     Format = Line -- Param,
                     case delete_blank(Format) of
-                        "for()" ->
+                        "for()"++_ ->
                             [Param1, Param2, Param3] = string:tokens(Param, ";"),
                             StartNum = analyse_param1(Param1),
                             [Operator, EndNum] = analyse_param2(Param2),
